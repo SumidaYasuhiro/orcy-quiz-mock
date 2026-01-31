@@ -416,8 +416,20 @@
   }
 
   function fit(){
-    const sc = Math.min(window.innerWidth / 390, window.innerHeight / 844);
-    app.style.transform = `scale(${sc})`;
+    const isMobile = window.matchMedia("(max-width: 600px)").matches;
+  
+    if (isMobile) {
+      // スマホ：scaleしない
+      app.style.transform = "none";
+      app.style.width = "100vw";
+      app.style.height = "100svh"; // Safari対策
+    } else {
+      // PC：今まで通り
+      const sc = Math.min(window.innerWidth / 390, window.innerHeight / 844);
+      app.style.transform = `scale(${sc})`;
+      app.style.width = "390px";
+      app.style.height = "844px";
+    }
   }
   window.addEventListener("resize", fit, {passive:true});
   fit();
