@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Orcy Quiz Mock - Stamp Screen (Audio Fix)</title>
+  <title>Orcy Quiz Mock - Stamp Screen (Audio Strong Fix)</title>
 
   <style>
   :root{
@@ -65,7 +65,7 @@
   }
   .primary:active{transform:scale(.99);filter:brightness(.95)}
 
-  /* TOP HUD (question screen) */
+  /* TOP HUD */
   .hud{
     position:absolute;top:18px;left:18px;right:18px;
     display:flex;align-items:center;justify-content:space-between;
@@ -113,7 +113,7 @@
   }
   @keyframes blink{0%{opacity:.55}50%{opacity:1}100%{opacity:.55}}
 
-  /* Ticket-ish block (reused) */
+  /* Ticket-ish block */
   .ticket{
     width:100%;
     margin-top:10px;
@@ -222,7 +222,7 @@
     <div style="margin-top:10px;opacity:.9;font-weight:900;">🔊 サウンドONであそんでね</div>
   </div>
 
-  <!-- STAMP STATUS（Start時/スタンプ増加時に表示） -->
+  <!-- STAMP STATUS -->
   <div id="s-stamp" class="screen stamp-screen hidden">
     <div class="title">スタンプカード</div>
 
@@ -289,7 +289,7 @@
     <div id="score" class="score">正解数：0（0問中）</div>
   </div>
 
-  <!-- QR SCREEN（スタンプ10で表示） -->
+  <!-- QR SCREEN -->
   <div id="s-qr" class="screen qr-screen hidden">
     <div class="title">チケット！</div>
     <div class="ticket">
@@ -325,6 +325,7 @@
 
   const QR_PAYLOAD = "DUMMY-TICKET-ORCY-2026";
 
+  // ====== 問題 ======
   const QUESTIONS = [
     { q: "ぼくの名前はな〜んだ？", choices: ["ネッシー","しゃちー","オルシー","しらんしー"], correct:"3" },
     { q: "ボコボコ…って、なにしてる音？", choices: ["あわを出してる","ねてる","うたってる","おこってる"], correct:"1" },
@@ -354,26 +355,16 @@
     "うんうん、そう思うよね〜！"
   ];
 
-  // ====== BGM ======
-  const bgm = new Audio("bgm.mp3");
-  bgm.loop = true;
-  bgm.volume = 0.25;
-
-  // ★Chrome対策：最初のユーザー操作で音声をアンロック
-  let audioUnlocked = false;
-  function unlockAudio(){
-    if (audioUnlocked) return;
-    audioUnlocked = true;
-
-    const v = bgm.volume;
-    bgm.volume = 0; // 無音で一度再生して許可を取る
-    bgm.play().then(() => {
-      bgm.pause();
-      bgm.currentTime = 0;
-      bgm.volume = v;
-    }).catch(() => {
-      bgm.volume = v;
-    });
+  // ====== BGM（強制版：ユーザー操作の“同一スタック”でnew Audio→play） ======
+  // これが「Mac Chromeで鳴る」最も強いパターン
+  let bgm = null;
+  function playBGM(){
+    if (!bgm) {
+      bgm = new Audio("bgm.mp3");
+      bgm.loop = true;
+      bgm.volume = 0.25;
+    }
+    bgm.play().catch(e => console.log("BGM play failed:", e));
   }
 
   // ====== DOM ======
@@ -585,13 +576,12 @@
 
   // ====== イベント ======
 
-  // Start → (アンロック) → スタンプ画面 → Q1
-  sStart.addEventListener("click", async () => {
+  // ★重要：Mac Chrome対策で pointerdown を使う
+  sStart.addEventListener("pointerdown", () => {
     if (locked) return;
-    lock(350);
+    lock(250);
 
-    unlockAudio(); // ★追加：まずアンロック
-    try { await bgm.play(); } catch(e) {}
+    playBGM(); // ★ここで確実に鳴らす（ユーザー操作の同一スタック）
 
     current = 0;
     correctCount = 0;
@@ -614,21 +604,21 @@
   // スタンプ画面の「つぎ！」
   stampNext.addEventListener("click", () => {
     if (locked) return;
-    lock(250);
+    lock(200);
     if (typeof afterStamp === "function") afterStamp();
   });
 
   // QR画面タップで戻る
   sQR.addEventListener("click", () => {
     if (locked) return;
-    lock(250);
+    lock(200);
     if (typeof afterQR === "function") afterQR();
   });
 
   // ENDタップでSTARTに戻す（仮）
   sEnd.addEventListener("click", () => {
     if (locked) return;
-    lock(350);
+    lock(250);
     show(sStart);
   });
 
@@ -638,7 +628,7 @@
     const btn = e.target.closest(".btn");
     if(!btn) return;
 
-    lock(250);
+    lock(200);
 
     const picked = btn.getAttribute("data");
     const data = QUESTIONS[current];
@@ -682,9 +672,7 @@
           setTimeout(() => {
             clearInterval(teaseTimer);
             show(sPrize);
-
-            // 景品画面に来たら操作OK
-            locked = false;
+            locked = false; // 景品画面で操作可能
 
             let gotStamp = false;
 
@@ -708,7 +696,7 @@
 
             nextBtn.onclick = () => {
               if (locked) return;
-              lock(250);
+              lock(200);
 
               if (gotStamp) {
                 showStampScreen(`スタンプ ${stampCount}/${STAMPS_FOR_QR}\n（+1！）`, () => {
