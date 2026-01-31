@@ -1,0 +1,742 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Orcy Quiz Mock - Stamp Screen</title>
+
+  <style>
+  :root{
+    --W:390; --H:844;
+    --ink:#111; --accent:#1f5bd6; --line:#1b2a57;
+    --gold:#ffcc33;
+  }
+  html,body{margin:0;height:100%;background:#000;font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;}
+  #stage{
+    width:100vw;height:100vh;display:grid;place-items:start;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    background:#000;
+  }
+  #app{
+    width:calc(var(--W)*1px);height:calc(var(--H)*1px);
+    background:#fff;position:relative;overflow:hidden;
+    transform-origin:top left;touch-action:manipulation;
+  }
+
+  .screen{
+    position:absolute;inset:0;
+    display:flex;flex-direction:column;align-items:center;
+    padding:40px 24px 28px;gap:18px;
+  }
+  .hidden{display:none}
+
+  /* START */
+  .start{
+    justify-content:center;
+    background:radial-gradient(120% 80% at 50% 0%,#6fe6ff 0%,#1f5bd6 45%,#062033 100%);
+    color:#fff;text-align:center;
+    user-select:none;-webkit-tap-highlight-color: transparent;
+  }
+  .start-title{font-size:58px;font-weight:900;line-height:1.05}
+  .start-sub{font-size:26px;font-weight:800;margin-top:12px}
+  .tap{
+    margin-top:28px;padding:10px 24px;border-radius:999px;border:2px solid #fff;
+    font-weight:900;letter-spacing:.06em;
+    animation:pulse 1.2s infinite;
+  }
+  @keyframes pulse{0%{opacity:.7}50%{opacity:1}100%{opacity:.7}}
+
+  /* COMMON */
+  .title{margin-top:60px;font-size:56px;font-weight:800;color:var(--ink)}
+  .orc{width:220px;height:220px;display:grid;place-items:center;user-select:none}
+  .orc img{max-width:100%;max-height:100%;object-fit:contain;pointer-events:none}
+  .question{font-size:24px;font-weight:800;text-align:center;color:var(--ink);line-height:1.25;white-space:pre-line}
+  .choices{width:100%;display:flex;flex-direction:column;gap:10px}
+  .btn{
+    height:62px;border-radius:14px;border:3px solid var(--line);
+    background:#fff;color:var(--accent);font-size:22px;font-weight:900;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn:active{transform:scale(.97);filter:brightness(.97)}
+  .primary{
+    position:absolute;left:24px;right:24px;bottom:36px;
+    height:70px;border-radius:18px;border:none;
+    background:var(--accent);color:#fff;font-size:26px;font-weight:1000;
+  }
+  .primary:active{transform:scale(.99);filter:brightness(.95)}
+
+  /* TOP HUD (question screen) */
+  .hud{
+    position:absolute;top:18px;left:18px;right:18px;
+    display:flex;align-items:center;justify-content:space-between;
+    pointer-events:none;
+  }
+  .pill{
+    padding:10px 12px;border-radius:999px;
+    background:rgba(255,255,255,.92);
+    border:2px solid rgba(0,0,0,.10);
+    box-shadow:0 10px 24px rgba(0,0,0,.08);
+    font-weight:1000;
+    color:rgba(0,0,0,.78);
+    display:flex;gap:8px;align-items:center;
+  }
+  .dot{
+    width:10px;height:10px;border-radius:999px;background:var(--gold);
+    box-shadow:0 0 0 4px rgba(255,204,51,.25);
+  }
+  .small{font-size:13px;font-weight:900;color:rgba(0,0,0,.55);}
+
+  /* PAUSE */
+  .pause{
+    background:radial-gradient(110% 90% at 50% 0%,#1b5a7a 0%,#062033 55%,#02101b 100%);
+    color:#fff;
+    justify-content:center;
+  }
+  .hint{
+    position:absolute;right:24px;bottom:220px;
+    font-size:26px;font-weight:1000;opacity:.9;
+    writing-mode:vertical-rl;text-orientation:mixed;
+    letter-spacing:.08em;
+    color:rgba(255,255,255,.92);
+  }
+
+  /* GACHA */
+  #s-gacha .question{ margin-top:32px; }
+  .spark{
+    position:absolute; top:120px; left:24px; right:24px;
+    text-align:center;
+    font-weight:1000;
+    color:rgba(255,255,255,.92);
+    text-shadow:0 2px 10px rgba(0,0,0,.35);
+    letter-spacing:.06em;
+    animation:blink 0.9s infinite;
+  }
+  @keyframes blink{0%{opacity:.55}50%{opacity:1}100%{opacity:.55}}
+
+  /* Ticket-ish block (reused) */
+  .ticket{
+    width:100%;
+    margin-top:10px;
+    padding:14px 14px 12px;
+    border-radius:18px;
+    border:3px solid rgba(0,0,0,.12);
+    background:linear-gradient(180deg, rgba(255,255,255,.95), rgba(255,255,255,.86));
+    box-shadow:0 10px 24px rgba(0,0,0,.08);
+    display:flex;
+    gap:12px;
+    align-items:center;
+    justify-content:center;
+  }
+  .ticket-left{
+    width:160px;height:160px;
+    border-radius:14px;
+    border:2px solid rgba(0,0,0,.15);
+    background:#fff;
+    display:grid;place-items:center;
+    overflow:hidden;
+  }
+  #qr{width:140px;height:140px}
+  .ticket-right{
+    flex:1;
+    display:flex;flex-direction:column;gap:6px;
+    text-align:left;
+  }
+  .ticket-badge{
+    display:inline-block;
+    padding:6px 10px;
+    border-radius:999px;
+    background:rgba(255,204,51,.28);
+    border:2px solid rgba(255,204,51,.55);
+    color:#7a5200;
+    font-weight:1000;
+    width:max-content;
+  }
+  .ticket-text{
+    font-weight:1000;
+    color:#111;
+    line-height:1.2;
+    white-space:pre-line;
+  }
+  .ticket-sub{
+    font-weight:900;
+    color:rgba(0,0,0,.55);
+    font-size:14px;
+  }
+
+  /* Stamp screen */
+  .stamp-screen{
+    justify-content:center;
+    background:radial-gradient(120% 80% at 50% 0%,#fff 0%,#f6fbff 45%,#eef5ff 100%);
+    text-align:center;
+  }
+  .stamp-screen .title{ margin-top:0; }
+
+  /* END */
+  .end{
+    justify-content:center;
+    background:#fff;
+    text-align:center;
+  }
+  .end .title{ margin-top:0; }
+  .score{
+    margin-top:18px;
+    font-size:24px;
+    font-weight:900;
+    color:var(--ink);
+    line-height:1.3;
+    white-space:pre-line;
+  }
+
+  /* QR screen */
+  .qr-screen{
+    justify-content:center;
+    background:radial-gradient(120% 80% at 50% 0%,#fff 0%,#f1f7ff 40%,#e9f0ff 100%);
+    text-align:center;
+  }
+  .qr-screen .title{ margin-top:0; }
+  .tapback{
+    margin-top:18px;
+    padding:10px 18px;
+    border-radius:999px;
+    border:2px solid rgba(0,0,0,.2);
+    font-weight:1000;
+    color:rgba(0,0,0,.7);
+  }
+
+  /* PC */
+  @media(min-width:820px){
+    #stage{place-items:center}
+    #app{border-radius:24px;box-shadow:0 18px 60px rgba(0,0,0,.45)}
+  }
+  </style>
+</head>
+
+<body>
+<div id="stage"><div id="app">
+
+  <!-- START -->
+  <div id="s-start" class="screen start">
+    <div class="start-title">オルシー<br>クイズ！</div>
+    <div class="start-sub">画面をタップ</div>
+    <div class="tap">START</div>
+  </div>
+
+  <!-- STAMP STATUS（Start時/スタンプ増加時に表示） -->
+  <div id="s-stamp" class="screen stamp-screen hidden">
+    <div class="title">スタンプカード</div>
+
+    <div class="ticket">
+      <div class="ticket-right" style="flex:1;text-align:center;">
+        <div class="ticket-badge" style="margin:0 auto;">いまのスタンプ</div>
+        <div id="stamp-status" class="ticket-text" style="text-align:center;font-size:28px;">
+          スタンプ 0/10
+        </div>
+        <div id="stamp-sub" class="ticket-sub" style="text-align:center;">
+          あと0こでチケット！
+        </div>
+      </div>
+    </div>
+
+    <button id="stamp-next" class="primary">つぎ！</button>
+  </div>
+
+  <!-- QUESTION -->
+  <div id="s-q" class="screen hidden">
+    <div class="hud">
+      <div class="pill"><span class="dot"></span><span id="hud-stamps">スタンプ 0/10</span></div>
+      <div class="pill"><span class="small" id="hud-progress">1/10</span></div>
+    </div>
+
+    <div class="title">第1問</div>
+    <div class="orc"><img src="orc_normal.png" alt="オルシー"></div>
+    <div class="question">（問題文）</div>
+    <div class="choices" id="choices"></div>
+  </div>
+
+  <!-- PAUSE -->
+  <div id="s-pause" class="screen pause hidden">
+    <div class="orc"><img src="orc_sink.png" alt="沈むオルシー"></div>
+    <div class="hint">ボコボコ…</div>
+  </div>
+
+  <!-- ANSWER -->
+  <div id="s-ans" class="screen hidden">
+    <div id="ans-title" class="title">正解！</div>
+    <div class="orc"><img id="ans-img" src="" alt="結果オルシー"></div>
+    <div id="ans-msg" class="question"></div>
+  </div>
+
+  <!-- GACHA WAIT -->
+  <div id="s-gacha" class="screen hidden" style="background:radial-gradient(110% 90% at 50% 0%,#6fe6ff 0%,#1f5bd6 48%,#062033 100%);color:#fff;">
+    <div class="spark" id="spark">キラッ…？</div>
+    <div class="title" style="color:#fff;">ガチャガチャ…</div>
+    <div class="orc"><img src="gacha.png" alt="ガチャ"></div>
+    <div class="question" id="gacha-line" style="color:#fff;">なにが出るかな…</div>
+  </div>
+
+  <!-- PRIZE -->
+  <div id="s-prize" class="screen hidden">
+    <div id="prize-title" class="title"></div>
+    <div class="orc"><img id="prize-img" src="" alt="景品"></div>
+    <div id="prize-msg" class="question"></div>
+    <button id="next" class="primary">つぎ！</button>
+  </div>
+
+  <!-- END -->
+  <div id="s-end" class="screen end hidden">
+    <div class="title">バイバーイ！</div>
+    <div id="score" class="score">正解数：0（0問中）</div>
+  </div>
+
+  <!-- QR SCREEN（スタンプ10で表示） -->
+  <div id="s-qr" class="screen qr-screen hidden">
+    <div class="title">チケット！</div>
+    <div class="ticket">
+      <div class="ticket-left">
+        <canvas id="qr" width="140" height="140"></canvas>
+      </div>
+      <div class="ticket-right">
+        <div class="ticket-badge">交換チケット</div>
+        <div class="ticket-text" id="qr-msg">スタンプが10こ たまった！\nQRを見せてね！</div>
+        <div class="ticket-sub" id="qr-sub">※いまはダミーQR（後で差し替えOK）</div>
+      </div>
+    </div>
+    <div class="tapback">画面タップでつづきへ</div>
+  </div>
+
+</div></div>
+
+<script>
+(() => {
+  // ====== 仕様（レバー） ======
+  const QUESTIONS_PER_PLAY = 10;      // 1プレイ10問（= 今回は10問固定で出題）
+  const BIG_RATE = 0.25;             // 大当たり 25%
+  const STAMPS_FOR_QR = 10;          // スタンプ10でQR
+  const FIRST_BONUS_STAMPS = 3;      // 初回だけスタンプ+3（神対応）
+  const CONSUME_STAMPS_ON_QR = true; // QR発行時に10消費（安全寄り）
+
+  // テンポ
+  const PAUSE_MS = 900;
+  const ANSWER_HOLD_MS = 750;
+  const WRONG_HOLD_MS = 1000;
+  const GACHA_BASE_MS = 900;
+  const TEASE_EXTRA_MS = 650;
+
+  // ダミーQR（後で差し替え）
+  const QR_PAYLOAD = "DUMMY-TICKET-ORCY-2026";
+
+  // ====== 問題（10問ぶん） ======
+  // correct は "1"〜"4"
+  const QUESTIONS = [
+    { q: "ぼくの名前はな〜んだ？", choices: ["ネッシー","しゃちー","オルシー","しらんしー"], correct:"3" },
+    { q: "ボコボコ…って、なにしてる音？", choices: ["あわを出してる","ねてる","うたってる","おこってる"], correct:"1" },
+    { q: "くじらは何類？", choices: ["さかな","ほにゅうるい","はちゅうるい","とり"], correct:"2" },
+    { q: "この子は誰？", choices: ["ウニ","タワシ","栗","まんまる石"], correct:"1" },
+    { q: "この水族館のおすすめのランチは？", choices: ["カレー","ラーメン","おすし","パンケーキ"], correct:"1" },
+
+    { q: "しゃちは何を食べる？", choices: ["さかな","チョコ","せっけん","くつした"], correct:"1" },
+    { q: "海の中でよく見える色はどれ？", choices: ["あお","あか","ピンク","みどり"], correct:"1" },
+    { q: "イルカはどこで息をする？", choices: ["おなか","しっぽ","あたま","ひれ"], correct:"3" },
+    { q: "水族館で守るといいマナーは？", choices: ["走る","大声","さわる","静かに見る"], correct:"4" },
+    { q: "オルシーの好きなものは？", choices: ["静寂","雷","ねばねば","スマホ"], correct:"1" },
+  ].slice(0, QUESTIONS_PER_PLAY);
+
+  const PRAISE = [
+    "物知り博士じゃないか！",
+    "すごい！キミ、えらすぎ！",
+    "天才のにおいがする…！",
+    "今日のキミ、強い…！",
+    "知識がキラキラしてる！",
+    "オルシー、びっくりした！"
+  ];
+  const SOFT_WRONG = [
+    "おしいっ！でもナイス挑戦！",
+    "ちがった〜！…でも好き！",
+    "これは引っかけだったかも！",
+    "ドンマイ！次で取り返そ！",
+    "うんうん、そう思うよね〜！"
+  ];
+
+  // ====== BGM（任意） ======
+  const bgm = new Audio("bgm.mp3");
+  bgm.loop = true;
+  bgm.volume = 0.25;
+
+  // ====== DOM ======
+  const app = document.getElementById("app");
+  const sStart = gid("s-start");
+  const sStamp = gid("s-stamp");
+  const sQ = gid("s-q");
+  const sPause = gid("s-pause");
+  const sAns = gid("s-ans");
+  const sGacha = gid("s-gacha");
+  const sPrize = gid("s-prize");
+  const sEnd = gid("s-end");
+  const sQR = gid("s-qr");
+
+  const qTitle = sQ.querySelector(".title");
+  const qText = sQ.querySelector(".question");
+  const choicesBox = gid("choices");
+
+  const hudStamps = gid("hud-stamps");
+  const hudProgress = gid("hud-progress");
+
+  const ansTitle = gid("ans-title");
+  const ansImg = gid("ans-img");
+  const ansMsg = gid("ans-msg");
+
+  const gachaLine = gid("gacha-line");
+  const spark = gid("spark");
+
+  const prizeTitle = gid("prize-title");
+  const prizeImg = gid("prize-img");
+  const prizeMsg = gid("prize-msg");
+  const nextBtn = gid("next");
+
+  const scoreEl = gid("score");
+
+  const stampStatus = gid("stamp-status");
+  const stampSub = gid("stamp-sub");
+  const stampNext = gid("stamp-next");
+
+  const qrCanvas = gid("qr");
+  const qrMsg = gid("qr-msg");
+  const qrSub = gid("qr-sub");
+
+  function gid(id){ return document.getElementById(id); }
+
+  function show(which){
+    [sStart, sStamp, sQ, sPause, sAns, sGacha, sPrize, sEnd, sQR].forEach(el => el.classList.add("hidden"));
+    which.classList.remove("hidden");
+  }
+
+  function fit(){
+    const sc = Math.min(window.innerWidth / 390, window.innerHeight / 844);
+    app.style.transform = `scale(${sc})`;
+  }
+  window.addEventListener("resize", fit, {passive:true});
+  fit();
+
+  // ====== 永続（スタンプカード） ======
+  const LS_STAMPS = "orcy_stampCount";
+  const LS_BONUS_DONE = "orcy_firstBonusDone";
+
+  function loadStampCount(){
+    const v = Number(localStorage.getItem(LS_STAMPS) || 0);
+    return Number.isFinite(v) && v >= 0 ? Math.floor(v) : 0;
+  }
+  function saveStampCount(v){
+    localStorage.setItem(LS_STAMPS, String(v));
+  }
+  function loadBonusDone(){
+    return localStorage.getItem(LS_BONUS_DONE) === "1";
+  }
+  function saveBonusDone(){
+    localStorage.setItem(LS_BONUS_DONE, "1");
+  }
+
+  // ====== 状態 ======
+  let current = 0;
+  let correctCount = 0;            // 今プレイの正解数（結果表示用）
+  let stampCount = loadStampCount(); // 累積スタンプ
+  let locked = false;
+
+  // “次へ”の戻り先
+  let afterStamp = null;
+  let afterQR = null;
+
+  function lock(ms){
+    locked = true;
+    setTimeout(() => { locked = false; }, ms);
+  }
+  function randFrom(arr){
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  function renderHUD(){
+    hudStamps.textContent = `スタンプ ${stampCount}/${STAMPS_FOR_QR}`;
+    hudProgress.textContent = `${current + 1}/${QUESTIONS.length}`;
+  }
+
+  function renderQuestion(){
+    const data = QUESTIONS[current];
+    qTitle.textContent = `第${current + 1}問`;
+    qText.textContent = data.q;
+
+    choicesBox.innerHTML = "";
+    data.choices.forEach((label, i) => {
+      const b = document.createElement("button");
+      b.className = "btn";
+      b.setAttribute("data", String(i + 1));
+      b.textContent = label;
+      choicesBox.appendChild(b);
+    });
+
+    renderHUD();
+  }
+
+  function renderScore(){
+    scoreEl.textContent = `正解数：${correctCount}（${QUESTIONS.length}問中）`;
+  }
+
+  function showStampScreen(message, nextFn){
+    stampStatus.textContent = message || `いま スタンプ ${stampCount}/${STAMPS_FOR_QR}`;
+    const remain = Math.max(0, STAMPS_FOR_QR - stampCount);
+    stampSub.textContent = `あと${remain}こでチケット！`;
+    afterStamp = nextFn;
+    show(sStamp);
+  }
+
+  // ★ダミーQR生成
+  function drawPseudoQR(canvas, payload){
+    const ctx = canvas.getContext("2d");
+    const N = 29;
+    const size = canvas.width;
+    const cell = Math.floor(size / N);
+    const pad = Math.floor((size - cell * N) / 2);
+
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0,0,size,size);
+
+    let h = 2166136261;
+    for (let i = 0; i < payload.length; i++){
+      h ^= payload.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    function rnd(){
+      h ^= h << 13; h ^= h >>> 17; h ^= h << 5;
+      return (h >>> 0) / 4294967296;
+    }
+
+    function finder(x,y){
+      ctx.fillStyle = "#000";
+      ctx.fillRect(pad + x*cell, pad + y*cell, 7*cell, 7*cell);
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(pad + (x+1)*cell, pad + (y+1)*cell, 5*cell, 5*cell);
+      ctx.fillStyle = "#000";
+      ctx.fillRect(pad + (x+2)*cell, pad + (y+2)*cell, 3*cell, 3*cell);
+    }
+    finder(0,0); finder(N-7,0); finder(0,N-7);
+
+    for (let y = 0; y < N; y++){
+      for (let x = 0; x < N; x++){
+        const inFinder =
+          (x < 7 && y < 7) ||
+          (x >= N-7 && y < 7) ||
+          (x < 7 && y >= N-7);
+        if (inFinder) continue;
+        if (rnd() < 0.42){
+          ctx.fillStyle = "#000";
+          ctx.fillRect(pad + x*cell, pad + y*cell, cell, cell);
+        }
+      }
+    }
+
+    ctx.strokeStyle = "rgba(0,0,0,.12)";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(1,1,size-2,size-2);
+  }
+
+  function showQR(message, returnFn){
+    qrMsg.textContent = message;
+    qrSub.textContent = CONSUME_STAMPS_ON_QR
+      ? `※スタンプを${STAMPS_FOR_QR}こ使いました（残り：${stampCount}）`
+      : `※スタンプは保持（現在：${stampCount}）`;
+    drawPseudoQR(qrCanvas, QR_PAYLOAD);
+    afterQR = returnFn;
+    show(sQR);
+  }
+
+  function goNextQuestionOrEnd(){
+    if (current < QUESTIONS.length - 1) {
+      current++;
+      renderQuestion();
+      show(sQ);
+    } else {
+      renderScore();
+      show(sEnd);
+    }
+  }
+
+  function maybeShowQRThen(nextFn){
+    if (stampCount >= STAMPS_FOR_QR) {
+      if (CONSUME_STAMPS_ON_QR) {
+        stampCount = stampCount - STAMPS_FOR_QR;
+        saveStampCount(stampCount);
+      }
+      showQR("スタンプが10こ たまった！\nQRを見せてね！", nextFn);
+      return true;
+    }
+    return false;
+  }
+
+  // ====== イベント ======
+
+  // Start → (スタンプ画面) → Q1
+  sStart.addEventListener("click", async () => {
+    if (locked) return;
+    lock(350);
+
+    try { await bgm.play(); } catch(e) {}
+
+    current = 0;
+    correctCount = 0;
+
+    // 初回だけ神対応 +3（永続で一度だけ）
+    if (!loadBonusDone()) {
+      stampCount = loadStampCount() + FIRST_BONUS_STAMPS;
+      saveStampCount(stampCount);
+      saveBonusDone();
+    } else {
+      stampCount = loadStampCount();
+    }
+
+    renderQuestion(); // 先に準備
+    showStampScreen(`いま スタンプ ${stampCount}/${STAMPS_FOR_QR}`, () => {
+      renderHUD();
+      show(sQ);
+    });
+  });
+
+  // スタンプ画面の「つぎ！」
+  stampNext.addEventListener("click", () => {
+    if (locked) return;
+    lock(250);
+    if (typeof afterStamp === "function") afterStamp();
+  });
+
+  // QR画面タップで戻る
+  sQR.addEventListener("click", () => {
+    if (locked) return;
+    lock(250);
+    if (typeof afterQR === "function") afterQR();
+  });
+
+  // ENDタップでSTARTに戻す（仮）
+  sEnd.addEventListener("click", () => {
+    if (locked) return;
+    lock(350);
+    show(sStart);
+  });
+
+  // 回答クリック
+  choicesBox.addEventListener("click", (e) => {
+    if (locked) return;
+    const btn = e.target.closest(".btn");
+    if(!btn) return;
+
+    // ここは「押し直し」が起きやすいので、ロックは短めにして
+    // 画面遷移の要所で解除していく
+    lock(250);
+
+    const picked = btn.getAttribute("data");
+    const data = QUESTIONS[current];
+    const isCorrect = (picked === data.correct);
+
+    show(sPause);
+
+    setTimeout(() => {
+      show(sAns);
+
+      if (isCorrect) {
+        correctCount++;
+
+        ansTitle.textContent = "正解！";
+        ansImg.src = "orc_win.png";
+        ansMsg.textContent = randFrom(PRAISE);
+
+        setTimeout(() => {
+          show(sGacha);
+
+          // 焦らし
+          const teaseLines = [
+            "なにが出るかな…",
+            "おっ…！？ あたる…！？",
+            "キラキラしてきた…！",
+            "……くる！",
+          ];
+          let t = 0;
+          gachaLine.textContent = teaseLines[0];
+          spark.textContent = "キラッ…？";
+
+          const teaseTimer = setInterval(() => {
+            t++;
+            if (t < teaseLines.length) gachaLine.textContent = teaseLines[t];
+            spark.textContent = (t % 2 === 0) ? "キラッ…？" : "ピカーン！";
+          }, 520);
+
+          const big = (Math.random() < BIG_RATE);
+          const nearMiss = (!big && Math.random() < 0.75);
+          const totalWait = GACHA_BASE_MS + (nearMiss ? TEASE_EXTRA_MS : 0) + Math.floor(Math.random() * 250);
+
+          setTimeout(() => {
+            clearInterval(teaseTimer);
+            show(sPrize);
+
+            // ★景品画面に来たら操作可能にする（2回押し問題対策）
+            locked = false;
+
+            let gotStamp = false;
+
+            if (big) {
+              stampCount = loadStampCount() + 1;
+              saveStampCount(stampCount);
+              gotStamp = true;
+
+              prizeTitle.textContent = "大当たり！";
+              prizeImg.src = "bingo.png";
+              prizeMsg.textContent = "スタンプ 1こゲット！！\nいいぞいいぞ〜！";
+            } else {
+              prizeTitle.textContent = "はずれ…？";
+              prizeImg.src = "bonus.png";
+              prizeMsg.textContent = nearMiss
+                ? "……おしいっ！！\nでも次がアツい！"
+                : "はずれ！\nでも知識は当たり！";
+            }
+
+            renderHUD();
+
+            // 「つぎ！」（この回だけの挙動）
+            nextBtn.onclick = () => {
+              if (locked) return;
+              lock(250);
+
+              // 大当たりでスタンプ増えたなら、同じ“スタンプ画面”を挟む
+              if (gotStamp) {
+                showStampScreen(`スタンプ ${stampCount}/${STAMPS_FOR_QR}\n（+1！）`, () => {
+                  // スタンプ画面のつぎで、QR判定→次へ
+                  if (maybeShowQRThen(() => goNextQuestionOrEnd())) return;
+                  goNextQuestionOrEnd();
+                });
+                return;
+              }
+
+              // スタンプ増えてない回はそのままQR判定→次へ
+              if (maybeShowQRThen(() => goNextQuestionOrEnd())) return;
+              goNextQuestionOrEnd();
+            };
+
+          }, totalWait);
+
+        }, ANSWER_HOLD_MS);
+
+      } else {
+        ansTitle.textContent = "ざんねん…";
+        ansImg.src = "orc_lose.png";
+        ansMsg.textContent = randFrom(SOFT_WRONG);
+
+        setTimeout(() => {
+          locked = false;
+          goNextQuestionOrEnd();
+        }, WRONG_HOLD_MS);
+      }
+
+    }, PAUSE_MS);
+  });
+
+  // 初期表示
+  show(sStart);
+})();
+</script>
+</body>
+</html>
