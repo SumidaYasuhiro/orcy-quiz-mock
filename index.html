@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Orcy Quiz Mock - Stamp Screen</title>
+  <title>Orcy Quiz Mock - Stamp Screen (Audio Fix)</title>
 
   <style>
   :root{
@@ -219,6 +219,7 @@
     <div class="start-title">オルシー<br>クイズ！</div>
     <div class="start-sub">画面をタップ</div>
     <div class="tap">START</div>
+    <div style="margin-top:10px;opacity:.9;font-weight:900;">🔊 サウンドONであそんでね</div>
   </div>
 
   <!-- STAMP STATUS（Start時/スタンプ増加時に表示） -->
@@ -309,11 +310,11 @@
 <script>
 (() => {
   // ====== 仕様（レバー） ======
-  const QUESTIONS_PER_PLAY = 10;      // 1プレイ10問（= 今回は10問固定で出題）
-  const BIG_RATE = 0.25;             // 大当たり 25%
-  const STAMPS_FOR_QR = 10;          // スタンプ10でQR
-  const FIRST_BONUS_STAMPS = 3;      // 初回だけスタンプ+3（神対応）
-  const CONSUME_STAMPS_ON_QR = true; // QR発行時に10消費（安全寄り）
+  const QUESTIONS_PER_PLAY = 10;
+  const BIG_RATE = 0.25;
+  const STAMPS_FOR_QR = 10;
+  const FIRST_BONUS_STAMPS = 3;
+  const CONSUME_STAMPS_ON_QR = true;
 
   // テンポ
   const PAUSE_MS = 900;
@@ -322,18 +323,14 @@
   const GACHA_BASE_MS = 900;
   const TEASE_EXTRA_MS = 650;
 
-  // ダミーQR（後で差し替え）
   const QR_PAYLOAD = "DUMMY-TICKET-ORCY-2026";
 
-  // ====== 問題（10問ぶん） ======
-  // correct は "1"〜"4"
   const QUESTIONS = [
     { q: "ぼくの名前はな〜んだ？", choices: ["ネッシー","しゃちー","オルシー","しらんしー"], correct:"3" },
     { q: "ボコボコ…って、なにしてる音？", choices: ["あわを出してる","ねてる","うたってる","おこってる"], correct:"1" },
     { q: "くじらは何類？", choices: ["さかな","ほにゅうるい","はちゅうるい","とり"], correct:"2" },
     { q: "この子は誰？", choices: ["ウニ","タワシ","栗","まんまる石"], correct:"1" },
     { q: "この水族館のおすすめのランチは？", choices: ["カレー","ラーメン","おすし","パンケーキ"], correct:"1" },
-
     { q: "しゃちは何を食べる？", choices: ["さかな","チョコ","せっけん","くつした"], correct:"1" },
     { q: "海の中でよく見える色はどれ？", choices: ["あお","あか","ピンク","みどり"], correct:"1" },
     { q: "イルカはどこで息をする？", choices: ["おなか","しっぽ","あたま","ひれ"], correct:"3" },
@@ -357,10 +354,27 @@
     "うんうん、そう思うよね〜！"
   ];
 
-  // ====== BGM（任意） ======
+  // ====== BGM ======
   const bgm = new Audio("bgm.mp3");
   bgm.loop = true;
   bgm.volume = 0.25;
+
+  // ★Chrome対策：最初のユーザー操作で音声をアンロック
+  let audioUnlocked = false;
+  function unlockAudio(){
+    if (audioUnlocked) return;
+    audioUnlocked = true;
+
+    const v = bgm.volume;
+    bgm.volume = 0; // 無音で一度再生して許可を取る
+    bgm.play().then(() => {
+      bgm.pause();
+      bgm.currentTime = 0;
+      bgm.volume = v;
+    }).catch(() => {
+      bgm.volume = v;
+    });
+  }
 
   // ====== DOM ======
   const app = document.getElementById("app");
@@ -417,7 +431,7 @@
   window.addEventListener("resize", fit, {passive:true});
   fit();
 
-  // ====== 永続（スタンプカード） ======
+  // ====== 永続（スタンプ） ======
   const LS_STAMPS = "orcy_stampCount";
   const LS_BONUS_DONE = "orcy_firstBonusDone";
 
@@ -437,11 +451,10 @@
 
   // ====== 状態 ======
   let current = 0;
-  let correctCount = 0;            // 今プレイの正解数（結果表示用）
-  let stampCount = loadStampCount(); // 累積スタンプ
+  let correctCount = 0;
+  let stampCount = loadStampCount();
   let locked = false;
 
-  // “次へ”の戻り先
   let afterStamp = null;
   let afterQR = null;
 
@@ -572,17 +585,17 @@
 
   // ====== イベント ======
 
-  // Start → (スタンプ画面) → Q1
+  // Start → (アンロック) → スタンプ画面 → Q1
   sStart.addEventListener("click", async () => {
     if (locked) return;
     lock(350);
 
+    unlockAudio(); // ★追加：まずアンロック
     try { await bgm.play(); } catch(e) {}
 
     current = 0;
     correctCount = 0;
 
-    // 初回だけ神対応 +3（永続で一度だけ）
     if (!loadBonusDone()) {
       stampCount = loadStampCount() + FIRST_BONUS_STAMPS;
       saveStampCount(stampCount);
@@ -591,7 +604,7 @@
       stampCount = loadStampCount();
     }
 
-    renderQuestion(); // 先に準備
+    renderQuestion(); // 準備
     showStampScreen(`いま スタンプ ${stampCount}/${STAMPS_FOR_QR}`, () => {
       renderHUD();
       show(sQ);
@@ -625,8 +638,6 @@
     const btn = e.target.closest(".btn");
     if(!btn) return;
 
-    // ここは「押し直し」が起きやすいので、ロックは短めにして
-    // 画面遷移の要所で解除していく
     lock(250);
 
     const picked = btn.getAttribute("data");
@@ -648,7 +659,6 @@
         setTimeout(() => {
           show(sGacha);
 
-          // 焦らし
           const teaseLines = [
             "なにが出るかな…",
             "おっ…！？ あたる…！？",
@@ -673,7 +683,7 @@
             clearInterval(teaseTimer);
             show(sPrize);
 
-            // ★景品画面に来たら操作可能にする（2回押し問題対策）
+            // 景品画面に来たら操作OK
             locked = false;
 
             let gotStamp = false;
@@ -696,22 +706,18 @@
 
             renderHUD();
 
-            // 「つぎ！」（この回だけの挙動）
             nextBtn.onclick = () => {
               if (locked) return;
               lock(250);
 
-              // 大当たりでスタンプ増えたなら、同じ“スタンプ画面”を挟む
               if (gotStamp) {
                 showStampScreen(`スタンプ ${stampCount}/${STAMPS_FOR_QR}\n（+1！）`, () => {
-                  // スタンプ画面のつぎで、QR判定→次へ
                   if (maybeShowQRThen(() => goNextQuestionOrEnd())) return;
                   goNextQuestionOrEnd();
                 });
                 return;
               }
 
-              // スタンプ増えてない回はそのままQR判定→次へ
               if (maybeShowQRThen(() => goNextQuestionOrEnd())) return;
               goNextQuestionOrEnd();
             };
