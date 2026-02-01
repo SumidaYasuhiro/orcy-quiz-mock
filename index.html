@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Orcy Quiz Mock - Stamp Screen (Audio Strong Fix)</title>
+  <title>Orcy Quiz Mock - Per-Question Image</title>
 
   <style>
   :root{
@@ -208,39 +208,33 @@
     #stage{place-items:center}
     #app{border-radius:24px;box-shadow:0 18px 60px rgba(0,0,0,.45)}
   }
-    
+
   /* ===== Mobile fit pack（縦が足りない時に詰める） ===== */
   @media (max-width: 600px) {
     .screen{
       padding: 22px 18px 18px;
       gap: 12px;
     }
-  
     .title{
       margin-top: 26px;
       font-size: 44px;
     }
-  
     .orc{
       width: 190px;
       height: 190px;
     }
-  
     .question{
       font-size: 20px;
     }
-  
     .btn{
       height: 54px;
       font-size: 20px;
     }
-  
     .primary{
       height: 60px;
       font-size: 22px;
       bottom: 18px;
     }
-  
     .hud{
       top: 10px;
       left: 10px;
@@ -250,7 +244,7 @@
       padding: 8px 10px;
     }
   }
-  
+
   /* どうしても縦が足りない端末だけスクロール許可（保険） */
   @media (max-width: 600px) and (max-height: 720px) {
     #s-q, #s-prize, #s-stamp, #s-qr {
@@ -299,7 +293,10 @@
     </div>
 
     <div class="title">第1問</div>
-    <div class="orc"><img src="orc_normal.png" alt="オルシー"></div>
+    <div class="orc">
+      <!-- ★問題ごとに画像を差し替える -->
+      <img id="q-image" src="" alt="問題画像">
+    </div>
     <div class="question">（問題文）</div>
     <div class="choices" id="choices"></div>
   </div>
@@ -375,18 +372,19 @@
 
   const QR_PAYLOAD = "DUMMY-TICKET-ORCY-2026";
 
-  // ====== 問題 ======
+  // ====== 問題（各問に image を追加） ======
+  // 第2問〜第10問は仮で q2.png〜q10.png
   const QUESTIONS = [
-    { q: "ぼくの名前はな〜んだ？", choices: ["ネッシー","しゃちー","オルシー","しらんしー"], correct:"3" },
-    { q: "ボコボコ…って、なにしてる音？", choices: ["あわを出してる","ねてる","うたってる","おこってる"], correct:"1" },
-    { q: "くじらは何類？", choices: ["さかな","ほにゅうるい","はちゅうるい","とり"], correct:"2" },
-    { q: "この子は誰？", choices: ["ウニ","タワシ","栗","まんまる石"], correct:"1" },
-    { q: "この水族館のおすすめのランチは？", choices: ["カレー","ラーメン","おすし","パンケーキ"], correct:"1" },
-    { q: "しゃちは何を食べる？", choices: ["さかな","チョコ","せっけん","くつした"], correct:"1" },
-    { q: "海の中でよく見える色はどれ？", choices: ["あお","あか","ピンク","みどり"], correct:"1" },
-    { q: "イルカはどこで息をする？", choices: ["おなか","しっぽ","あたま","ひれ"], correct:"3" },
-    { q: "水族館で守るといいマナーは？", choices: ["走る","大声","さわる","静かに見る"], correct:"4" },
-    { q: "オルシーの好きなものは？", choices: ["静寂","雷","ねばねば","スマホ"], correct:"1" },
+    { q: "ぼくの名前はな〜んだ？", choices: ["ネッシー","しゃちー","オルシー","しらんしー"], correct:"3", image:"orc_normal.png" },
+    { q: "ボコボコ…って、なにしてる音？", choices: ["あわを出してる","ねてる","うたってる","おこってる"], correct:"1", image:"q2.png" },
+    { q: "くじらは何類？", choices: ["さかな","ほにゅうるい","はちゅうるい","とり"], correct:"2", image:"q3.png" },
+    { q: "この子は誰？", choices: ["ウニ","タワシ","栗","まんまる石"], correct:"1", image:"q4.png" },
+    { q: "この水族館のおすすめのランチは？", choices: ["カレー","ラーメン","おすし","パンケーキ"], correct:"1", image:"q5.png" },
+    { q: "しゃちは何を食べる？", choices: ["さかな","チョコ","せっけん","くつした"], correct:"1", image:"q6.png" },
+    { q: "海の中でよく見える色はどれ？", choices: ["あお","あか","ピンク","みどり"], correct:"1", image:"q7.png" },
+    { q: "イルカはどこで息をする？", choices: ["おなか","しっぽ","あたま","ひれ"], correct:"3", image:"q8.png" },
+    { q: "水族館で守るといいマナーは？", choices: ["走る","大声","さわる","静かに見る"], correct:"4", image:"q9.png" },
+    { q: "オルシーの好きなものは？", choices: ["静寂","雷","ねばねば","スマホ"], correct:"1", image:"q10.png" },
   ].slice(0, QUESTIONS_PER_PLAY);
 
   const PRAISE = [
@@ -405,8 +403,7 @@
     "うんうん、そう思うよね〜！"
   ];
 
-  // ====== BGM（強制版：ユーザー操作の“同一スタック”でnew Audio→play） ======
-  // これが「Mac Chromeで鳴る」最も強いパターン
+  // ====== BGM（Mac Chrome向け：pointerdownで確実に鳴らす） ======
   let bgm = null;
   function playBGM(){
     if (!bgm) {
@@ -431,6 +428,7 @@
 
   const qTitle = sQ.querySelector(".title");
   const qText = sQ.querySelector(".question");
+  const qImage = gid("q-image"); // ★追加
   const choicesBox = gid("choices");
 
   const hudStamps = gid("hud-stamps");
@@ -465,16 +463,15 @@
     which.classList.remove("hidden");
   }
 
+  // ====== fit（スマホはscaleしない＋svh） ======
   function fit(){
     const isMobile = window.matchMedia("(max-width: 600px)").matches;
-  
+
     if (isMobile) {
-      // スマホ：scaleしない
       app.style.transform = "none";
       app.style.width = "100vw";
-      app.style.height = "100svh"; // Safari対策
+      app.style.height = "100svh";
     } else {
-      // PC：今まで通り
       const sc = Math.min(window.innerWidth / 390, window.innerHeight / 844);
       app.style.transform = `scale(${sc})`;
       app.style.width = "390px";
@@ -528,6 +525,14 @@
     const data = QUESTIONS[current];
     qTitle.textContent = `第${current + 1}問`;
     qText.textContent = data.q;
+
+    // ★問題画像の差し替え
+    if (data.image) {
+      qImage.src = data.image;
+      qImage.style.display = "block";
+    } else {
+      qImage.style.display = "none";
+    }
 
     choicesBox.innerHTML = "";
     data.choices.forEach((label, i) => {
@@ -638,12 +643,12 @@
 
   // ====== イベント ======
 
-  // ★重要：Mac Chrome対策で pointerdown を使う
+  // Start：pointerdownでBGM確実に鳴らす
   sStart.addEventListener("pointerdown", () => {
     if (locked) return;
     lock(250);
 
-    playBGM(); // ★ここで確実に鳴らす（ユーザー操作の同一スタック）
+    playBGM();
 
     current = 0;
     correctCount = 0;
@@ -656,7 +661,7 @@
       stampCount = loadStampCount();
     }
 
-    renderQuestion(); // 準備
+    renderQuestion();
     showStampScreen(`いま スタンプ ${stampCount}/${STAMPS_FOR_QR}`, () => {
       renderHUD();
       show(sQ);
@@ -734,7 +739,7 @@
           setTimeout(() => {
             clearInterval(teaseTimer);
             show(sPrize);
-            locked = false; // 景品画面で操作可能
+            locked = false;
 
             let gotStamp = false;
 
