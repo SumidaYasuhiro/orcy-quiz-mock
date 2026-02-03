@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Orcy Quiz Mock - Per-Question Image</title>
+  <title>Orcy Quiz Mock - Gacha Pause Move</title>
 
   <style>
   :root{
@@ -86,7 +86,7 @@
   }
   .small{font-size:13px;font-weight:900;color:rgba(0,0,0,.55);}
 
-  /* PAUSE */
+  /* PAUSE（ぽこぽこ） */
   .pause{
     background:radial-gradient(110% 90% at 50% 0%,#1b5a7a 0%,#062033 55%,#02101b 100%);
     color:#fff;
@@ -100,18 +100,15 @@
     color:rgba(255,255,255,.92);
   }
 
-  /* GACHA */
-  #s-gacha .question{ margin-top:32px; }
-  .spark{
-    position:absolute; top:120px; left:24px; right:24px;
-    text-align:center;
-    font-weight:1000;
-    color:rgba(255,255,255,.92);
-    text-shadow:0 2px 10px rgba(0,0,0,.35);
-    letter-spacing:.06em;
-    animation:blink 0.9s infinite;
+  /* GACHA（画像だけ・中央寄せ） */
+  #s-gacha{
+    justify-content:center;
+    gap:0;
   }
-  @keyframes blink{0%{opacity:.55}50%{opacity:1}100%{opacity:.55}}
+  #s-gacha .orc{
+    width:260px;
+    height:260px;
+  }
 
   /* Ticket-ish block */
   .ticket{
@@ -243,6 +240,12 @@
     .pill{
       padding: 8px 10px;
     }
+
+    /* ガチャも中央で少し大きめを維持 */
+    #s-gacha .orc{
+      width:240px;
+      height:240px;
+    }
   }
 
   /* どうしても縦が足りない端末だけスクロール許可（保険） */
@@ -294,7 +297,6 @@
 
     <div class="title">第1問</div>
     <div class="orc">
-      <!-- ★問題ごとに画像を差し替える -->
       <img id="q-image" src="" alt="問題画像">
     </div>
     <div class="question">（問題文）</div>
@@ -304,7 +306,7 @@
   <!-- PAUSE -->
   <div id="s-pause" class="screen pause hidden">
     <div class="orc"><img src="orc_sink.png" alt="沈むオルシー"></div>
-    <div class="hint">ボコボコ…</div>
+    <div class="hint">なにが出る…？</div>
   </div>
 
   <!-- ANSWER -->
@@ -314,12 +316,9 @@
     <div id="ans-msg" class="question"></div>
   </div>
 
-  <!-- GACHA WAIT -->
+  <!-- GACHA WAIT（画像だけ） -->
   <div id="s-gacha" class="screen hidden" style="background:radial-gradient(110% 90% at 50% 0%,#6fe6ff 0%,#1f5bd6 48%,#062033 100%);color:#fff;">
-    <div class="spark" id="spark">キラッ…？</div>
-    <div class="title" style="color:#fff;">ガチャガチャ…</div>
     <div class="orc"><img src="gacha.png" alt="ガチャ"></div>
-    <div class="question" id="gacha-line" style="color:#fff;">なにが出るかな…</div>
   </div>
 
   <!-- PRIZE -->
@@ -356,24 +355,73 @@
 
 <script>
 (() => {
-  // ====== 仕様（レバー） ======
+  // ====== 仕様（ゲーム進行レバー） ======
   const QUESTIONS_PER_PLAY = 10;
-  const BIG_RATE = 0.25;
   const STAMPS_FOR_QR = 10;
   const FIRST_BONUS_STAMPS = 3;
   const CONSUME_STAMPS_ON_QR = true;
 
-  // テンポ
-  const PAUSE_MS = 900;
-  const ANSWER_HOLD_MS = 750;
-  const WRONG_HOLD_MS = 1000;
-  const GACHA_BASE_MS = 900;
-  const TEASE_EXTRA_MS = 650;
-
+  // テスト/本番で差し替え（ダミー）
   const QR_PAYLOAD = "DUMMY-TICKET-ORCY-2026";
 
-  // ====== 問題（各問に image を追加） ======
-  // 第2問〜第10問は仮で q2.png〜q10.png
+  // ====== 演出プリセット（ケレン味） ======
+  const FX_PRESET_KEY = "sticky"; // "snappy" | "standard" | "sticky"
+
+  const FX_PRESETS = {
+    snappy: {
+      LOCK: { START_MS:200, STAMP_NEXT_MS:160, QR_TAP_MS:160, END_TAP_MS:200, ANSWER_PICK_MS:160, NEXT_BTN_MS:160 },
+      HOLD: { CORRECT_MS:520, WRONG_MS:780 },
+      GACHA: {
+        BASE_MS:650,
+        RANDOM_JITTER_MS:160,
+        PAUSE_RATIO:0.50,
+        PAUSE_MIN_MS:180,
+        PAUSE_MS:520
+      },
+      RATE: { BIG:0.5, NEAR_MISS:0.55 }, // ※テスト用でBIGを0.5
+      BGM: { VOLUME:0.25 },
+    },
+    standard: {
+      LOCK: { START_MS:250, STAMP_NEXT_MS:200, QR_TAP_MS:200, END_TAP_MS:250, ANSWER_PICK_MS:200, NEXT_BTN_MS:200 },
+      HOLD: { CORRECT_MS:750, WRONG_MS:1000 },
+      GACHA: {
+        BASE_MS:900,
+        RANDOM_JITTER_MS:250,
+        PAUSE_RATIO:0.55,
+        PAUSE_MIN_MS:200,
+        PAUSE_MS:900
+      },
+      RATE: { BIG:0.5, NEAR_MISS:0.75 }, // ※テスト用でBIGを0.5
+      BGM: { VOLUME:0.25 },
+    },
+    sticky: {
+      LOCK: { START_MS:260, STAMP_NEXT_MS:210, QR_TAP_MS:210, END_TAP_MS:260, ANSWER_PICK_MS:210, NEXT_BTN_MS:210 },
+      HOLD: { CORRECT_MS:980, WRONG_MS:1200 },
+      GACHA: {
+        BASE_MS:1200,
+        RANDOM_JITTER_MS:420,
+        PAUSE_RATIO:0.70,
+        PAUSE_MIN_MS:240,
+        PAUSE_MS:1100
+      },
+      RATE: { BIG:0.5, NEAR_MISS:0.88 }, // ※テスト用でBIGを0.5
+      BGM: { VOLUME:0.25 },
+    },
+  };
+
+  const FX = FX_PRESETS[FX_PRESET_KEY] || FX_PRESETS.standard;
+
+  // ====== ガチャ画像：ポン！（共通1パターン） ======
+  const GACHA_POP = {
+    ENABLE: true,
+    SCALE: 1.2,
+    DURATION_MS: 180,
+    DELAY_MS: 500,
+    EASING: "cubic-bezier(.2,.9,.2,1)",
+    ORIGIN: "50% 50%",
+  };
+
+  // ====== 問題 ======
   const QUESTIONS = [
     { q: "ぼくの名前はな〜んだ？", choices: ["ネッシー","しゃちー","オルシー","しらんしー"], correct:"3", image:"orc_normal.png" },
     { q: "ボコボコ…って、なにしてる音？", choices: ["あわを出してる","ねてる","うたってる","おこってる"], correct:"1", image:"q2.png" },
@@ -403,13 +451,15 @@
     "うんうん、そう思うよね〜！"
   ];
 
-  // ====== BGM（Mac Chrome向け：pointerdownで確実に鳴らす） ======
+  // ====== BGM ======
   let bgm = null;
   function playBGM(){
     if (!bgm) {
       bgm = new Audio("bgm.mp3");
       bgm.loop = true;
-      bgm.volume = 0.25;
+      bgm.volume = FX.BGM.VOLUME;
+    } else {
+      bgm.volume = FX.BGM.VOLUME;
     }
     bgm.play().catch(e => console.log("BGM play failed:", e));
   }
@@ -428,7 +478,7 @@
 
   const qTitle = sQ.querySelector(".title");
   const qText = sQ.querySelector(".question");
-  const qImage = gid("q-image"); // ★追加
+  const qImage = gid("q-image");
   const choicesBox = gid("choices");
 
   const hudStamps = gid("hud-stamps");
@@ -437,9 +487,6 @@
   const ansTitle = gid("ans-title");
   const ansImg = gid("ans-img");
   const ansMsg = gid("ans-msg");
-
-  const gachaLine = gid("gacha-line");
-  const spark = gid("spark");
 
   const prizeTitle = gid("prize-title");
   const prizeImg = gid("prize-img");
@@ -463,7 +510,49 @@
     which.classList.remove("hidden");
   }
 
-  // ====== fit（スマホはscaleしない＋svh） ======
+  // ====== ガチャ画像：ポン！（拡大） ======
+  let gachaPopAnim = null;
+
+  function getGachaImg(){
+    return sGacha.querySelector(".orc img");
+  }
+  function resetGachaImgStyle(){
+    const img = getGachaImg();
+    if (!img) return;
+    img.style.transform = "";
+    img.style.transformOrigin = "";
+    img.style.willChange = "";
+  }
+  function playGachaPop(){
+    if (!GACHA_POP.ENABLE) return;
+    const img = getGachaImg();
+    if (!img) return;
+
+    if (gachaPopAnim) { gachaPopAnim.cancel(); gachaPopAnim = null; }
+
+    img.style.transformOrigin = GACHA_POP.ORIGIN;
+    img.style.willChange = "transform";
+
+    gachaPopAnim = img.animate(
+      [
+        { transform: "scale(1)" },
+        { transform: `scale(${GACHA_POP.SCALE})` },
+        { transform: "scale(1)" },
+      ],
+      {
+        duration: GACHA_POP.DURATION_MS,
+        iterations: 1,
+        easing: GACHA_POP.EASING,
+      }
+    );
+
+    gachaPopAnim.onfinish = () => {
+      gachaPopAnim = null;
+      resetGachaImgStyle();
+    };
+  }
+
+  // ====== fit ======
   function fit(){
     const isMobile = window.matchMedia("(max-width: 600px)").matches;
 
@@ -526,7 +615,6 @@
     qTitle.textContent = `第${current + 1}問`;
     qText.textContent = data.q;
 
-    // ★問題画像の差し替え
     if (data.image) {
       qImage.src = data.image;
       qImage.style.display = "block";
@@ -646,7 +734,7 @@
   // Start：pointerdownでBGM確実に鳴らす
   sStart.addEventListener("pointerdown", () => {
     if (locked) return;
-    lock(250);
+    lock(FX.LOCK.START_MS);
 
     playBGM();
 
@@ -671,21 +759,21 @@
   // スタンプ画面の「つぎ！」
   stampNext.addEventListener("click", () => {
     if (locked) return;
-    lock(200);
+    lock(FX.LOCK.STAMP_NEXT_MS);
     if (typeof afterStamp === "function") afterStamp();
   });
 
   // QR画面タップで戻る
   sQR.addEventListener("click", () => {
     if (locked) return;
-    lock(200);
+    lock(FX.LOCK.QR_TAP_MS);
     if (typeof afterQR === "function") afterQR();
   });
 
   // ENDタップでSTARTに戻す（仮）
   sEnd.addEventListener("click", () => {
     if (locked) return;
-    lock(250);
+    lock(FX.LOCK.END_TAP_MS);
     show(sStart);
   });
 
@@ -694,109 +782,109 @@
     if (locked) return;
     const btn = e.target.closest(".btn");
     if(!btn) return;
-
-    lock(200);
+    lock(FX.LOCK.ANSWER_PICK_MS);
 
     const picked = btn.getAttribute("data");
     const data = QUESTIONS[current];
     const isCorrect = (picked === data.correct);
 
-    show(sPause);
+    // 不正解は今まで通り（ガチャなし）
+    if (!isCorrect) {
+      show(sAns);
+      ansTitle.textContent = "ざんねん…";
+      ansImg.src = "orc_lose.png";
+      ansMsg.textContent = randFrom(SOFT_WRONG);
+
+      setTimeout(() => {
+        locked = false;
+        goNextQuestionOrEnd();
+      }, FX.HOLD.WRONG_MS);
+      return;
+    }
+
+    // ===== 正解：まず「正解表示」→ガチャ→ぽこぽこ→結果 =====
+    correctCount++;
+
+    show(sAns);
+    ansTitle.textContent = "正解！";
+    ansImg.src = "orc_win.png";
+    ansMsg.textContent = randFrom(PRAISE);
 
     setTimeout(() => {
-      show(sAns);
+      // ガチャ画面へ（画像だけ）
+      show(sGacha);
 
-      if (isCorrect) {
-        correctCount++;
+      // ★共通：ガチャ画像を一瞬ポン！
+      setTimeout(() => playGachaPop(), GACHA_POP.DELAY_MS);
 
-        ansTitle.textContent = "正解！";
-        ansImg.src = "orc_win.png";
-        ansMsg.textContent = randFrom(PRAISE);
+      // 結果を先に決める（※演出は今回は付けない）
+      const big = (Math.random() < FX.RATE.BIG);
+      const nearMiss = (!big && Math.random() < FX.RATE.NEAR_MISS);
 
-        setTimeout(() => {
-          show(sGacha);
+      // ★ガチャ時間は共通（nearMissで伸ばさない）
+      const totalWait =
+        FX.GACHA.BASE_MS +
+        Math.floor(Math.random() * FX.GACHA.RANDOM_JITTER_MS);
 
-          const teaseLines = [
-            "なにが出るかな…",
-            "おっ…！？ あたる…！？",
-            "キラキラしてきた…！",
-            "……くる！",
-          ];
-          let t = 0;
-          gachaLine.textContent = teaseLines[0];
-          spark.textContent = "キラッ…？";
+      const pauseAt = Math.max(
+        FX.GACHA.PAUSE_MIN_MS,
+        Math.floor(totalWait * FX.GACHA.PAUSE_RATIO)
+      );
 
-          const teaseTimer = setInterval(() => {
-            t++;
-            if (t < teaseLines.length) gachaLine.textContent = teaseLines[t];
-            spark.textContent = (t % 2 === 0) ? "キラッ…？" : "ピカーン！";
-          }, 520);
+      setTimeout(() => {
+        show(sPause);
+      }, pauseAt);
 
-          const big = (Math.random() < BIG_RATE);
-          const nearMiss = (!big && Math.random() < 0.75);
-          const totalWait = GACHA_BASE_MS + (nearMiss ? TEASE_EXTRA_MS : 0) + Math.floor(Math.random() * 250);
+      // ぽこぽこが終わったら結果へ
+      setTimeout(() => {
+        show(sPrize);
+        locked = false;
 
-          setTimeout(() => {
-            clearInterval(teaseTimer);
-            show(sPrize);
-            locked = false;
+        let gotStamp = false;
 
-            let gotStamp = false;
+        if (big) {
+          stampCount = loadStampCount() + 1;
+          saveStampCount(stampCount);
+          gotStamp = true;
 
-            if (big) {
-              stampCount = loadStampCount() + 1;
-              saveStampCount(stampCount);
-              gotStamp = true;
+          prizeTitle.textContent = "大当たり！";
+          prizeImg.src = "bingo.png";
+          prizeMsg.textContent = "スタンプ 1こゲット！！\nいいぞいいぞ〜！";
+        } else {
+          prizeTitle.textContent = "ざんねん！";
+          prizeImg.src = "bonus.png";
+          // いったん nearMiss / 通常はずれ どちらも「ドンマイカード」寄せにする
+          prizeMsg.textContent = "ドンマイカードをゲット！";
+        }
 
-              prizeTitle.textContent = "大当たり！";
-              prizeImg.src = "bingo.png";
-              prizeMsg.textContent = "スタンプ 1こゲット！！\nいいぞいいぞ〜！";
-            } else {
-              prizeTitle.textContent = "はずれ…？";
-              prizeImg.src = "bonus.png";
-              prizeMsg.textContent = nearMiss
-                ? "……おしいっ！！\nでも次がアツい！"
-                : "はずれ！\nでも知識は当たり！";
-            }
+        renderHUD();
 
-            renderHUD();
+        nextBtn.onclick = () => {
+          if (locked) return;
+          lock(FX.LOCK.NEXT_BTN_MS);
 
-            nextBtn.onclick = () => {
-              if (locked) return;
-              lock(200);
-
-              if (gotStamp) {
-                showStampScreen(`スタンプ ${stampCount}/${STAMPS_FOR_QR}\n（+1！）`, () => {
-                  if (maybeShowQRThen(() => goNextQuestionOrEnd())) return;
-                  goNextQuestionOrEnd();
-                });
-                return;
-              }
-
+          if (gotStamp) {
+            showStampScreen(`スタンプ ${stampCount}/${STAMPS_FOR_QR}\n（+1！）`, () => {
               if (maybeShowQRThen(() => goNextQuestionOrEnd())) return;
               goNextQuestionOrEnd();
-            };
+            });
+            return;
+          }
 
-          }, totalWait);
-
-        }, ANSWER_HOLD_MS);
-
-      } else {
-        ansTitle.textContent = "ざんねん…";
-        ansImg.src = "orc_lose.png";
-        ansMsg.textContent = randFrom(SOFT_WRONG);
-
-        setTimeout(() => {
-          locked = false;
+          if (maybeShowQRThen(() => goNextQuestionOrEnd())) return;
           goNextQuestionOrEnd();
-        }, WRONG_HOLD_MS);
-      }
+        };
 
-    }, PAUSE_MS);
+      }, pauseAt + FX.GACHA.PAUSE_MS);
+
+    }, FX.HOLD.CORRECT_MS);
   });
 
   // 初期表示
   show(sStart);
+
+  // ====== util ======
+  function gid(id){ return document.getElementById(id); }
 })();
 </script>
 </body>
