@@ -11,22 +11,32 @@
     --ink:#111; --accent:#1f5bd6; --line:#1b2a57;
     --gold:#ffcc33;
   }
-  html,body{margin:0;height:100%;background:#000;font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;}
+  html,body{
+    margin:0;height:100%;
+    background:#000;
+    font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;
+  }
   #stage{
-    width:100vw;height:100vh;display:grid;place-items:start;
+    width:100vw;height:100vh;
+    display:grid;place-items:start;
     padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     background:#000;
   }
   #app{
-    width:calc(var(--W)*1px);height:calc(var(--H)*1px);
-    background:#fff;position:relative;overflow:hidden;
-    transform-origin:top left;touch-action:manipulation;
+    width:calc(var(--W)*1px);
+    height:calc(var(--H)*1px);
+    background:#fff;
+    position:relative;
+    overflow:hidden;
+    transform-origin:top left;
+    touch-action:manipulation;
   }
 
   .screen{
     position:absolute;inset:0;
     display:flex;flex-direction:column;align-items:center;
-    padding:40px 24px 28px;gap:18px;
+    padding:40px 24px 28px;
+    gap:18px;
   }
   .hidden{display:none}
 
@@ -34,54 +44,113 @@
   .start{
     justify-content:center;
     background:radial-gradient(120% 80% at 50% 0%,#6fe6ff 0%,#1f5bd6 45%,#062033 100%);
-    color:#fff;text-align:center;
-    user-select:none;-webkit-tap-highlight-color: transparent;
+    color:#fff;
+    text-align:center;
+    user-select:none;
+    -webkit-tap-highlight-color: transparent;
   }
   .start-title{font-size:58px;font-weight:900;line-height:1.05}
   .start-sub{font-size:26px;font-weight:800;margin-top:12px}
   .tap{
-    margin-top:28px;padding:10px 24px;border-radius:999px;border:2px solid #fff;
-    font-weight:900;letter-spacing:.06em;
+    margin-top:28px;
+    padding:10px 24px;
+    border-radius:999px;
+    border:2px solid #fff;
+    font-weight:900;
+    letter-spacing:.06em;
     animation:pulse 1.2s infinite;
   }
-  @keyframes pulse{0%{opacity:.7}50%{opacity:1}100%{opacity:.7}}
+  @keyframes pulse{
+    0%{opacity:.7}
+    50%{opacity:1}
+    100%{opacity:.7}
+  }
 
   /* COMMON */
   .title{margin-top:60px;font-size:56px;font-weight:800;color:var(--ink)}
-  .orc{width:220px;height:220px;display:grid;place-items:center;user-select:none}
-  .orc img{max-width:100%;max-height:100%;object-fit:contain;pointer-events:none}
-  .question{font-size:24px;font-weight:800;text-align:center;color:var(--ink);line-height:1.25;white-space:pre-line}
+  /* 回答画面だけタイトル余白を詰める */
+  #s-ans .title{ margin-top:24px; }
+
+  .orc{
+    width:220px;height:220px;
+    display:grid;place-items:center;
+    user-select:none;
+  }
+  .orc img{
+    max-width:100%;
+    max-height:100%;
+    object-fit:contain;
+    pointer-events:none;
+  }
+  .question{
+    font-size:24px;
+    font-weight:800;
+    text-align:center;
+    color:var(--ink);
+    line-height:1.25;
+    white-space:pre-line;
+    margin-top:12px;
+  }
+
+  #s-ans .orc{
+    width:180px;
+    height:180px;
+    margin-top:10px;
+    margin-bottom:60px; /* 文字が画像に被らない対策 */
+  }
+  #s-ans .question{
+    margin-top:18px;
+    max-width:260px;
+  }
+
   .choices{width:100%;display:flex;flex-direction:column;gap:10px}
   .btn{
-    height:62px;border-radius:14px;border:3px solid var(--line);
-    background:#fff;color:var(--accent);font-size:22px;font-weight:900;
+    height:62px;
+    border-radius:14px;
+    border:3px solid var(--line);
+    background:#fff;
+    color:var(--accent);
+    font-size:22px;
+    font-weight:900;
     -webkit-tap-highlight-color: transparent;
   }
   .btn:active{transform:scale(.97);filter:brightness(.97)}
   .primary{
-    position:absolute;left:24px;right:24px;bottom:36px;
-    height:70px;border-radius:18px;border:none;
-    background:var(--accent);color:#fff;font-size:26px;font-weight:1000;
+    position:absolute;
+    left:24px;right:24px;bottom:36px;
+    height:70px;
+    border-radius:18px;
+    border:none;
+    background:var(--accent);
+    color:#fff;
+    font-size:26px;
+    font-weight:1000;
   }
   .primary:active{transform:scale(.99);filter:brightness(.95)}
 
   /* TOP HUD */
   .hud{
-    position:absolute;top:18px;left:18px;right:18px;
+    position:absolute;
+    top:18px;left:18px;right:18px;
     display:flex;align-items:center;justify-content:space-between;
     pointer-events:none;
   }
   .pill{
-    padding:10px 12px;border-radius:999px;
+    padding:10px 12px;
+    border-radius:999px;
     background:rgba(255,255,255,.92);
     border:2px solid rgba(0,0,0,.10);
     box-shadow:0 10px 24px rgba(0,0,0,.08);
     font-weight:1000;
     color:rgba(0,0,0,.78);
-    display:flex;gap:8px;align-items:center;
+    display:flex;
+    gap:8px;
+    align-items:center;
   }
   .dot{
-    width:10px;height:10px;border-radius:999px;background:var(--gold);
+    width:10px;height:10px;
+    border-radius:999px;
+    background:var(--gold);
     box-shadow:0 0 0 4px rgba(255,204,51,.25);
   }
   .small{font-size:13px;font-weight:900;color:rgba(0,0,0,.55);}
@@ -93,9 +162,13 @@
     justify-content:center;
   }
   .hint{
-    position:absolute;right:24px;bottom:220px;
-    font-size:26px;font-weight:1000;opacity:.9;
-    writing-mode:vertical-rl;text-orientation:mixed;
+    position:absolute;
+    right:24px;bottom:220px;
+    font-size:26px;
+    font-weight:1000;
+    opacity:.9;
+    writing-mode:vertical-rl;
+    text-orientation:mixed;
     letter-spacing:.08em;
     color:rgba(255,255,255,.92);
   }
@@ -135,7 +208,9 @@
   #qr{width:140px;height:140px}
   .ticket-right{
     flex:1;
-    display:flex;flex-direction:column;gap:6px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
     text-align:left;
   }
   .ticket-badge{
@@ -220,9 +295,7 @@
       width: 190px;
       height: 190px;
     }
-    .question{
-      font-size: 20px;
-    }
+    .question{ font-size: 20px; }
     .btn{
       height: 54px;
       font-size: 20px;
@@ -237,9 +310,7 @@
       left: 10px;
       right: 10px;
     }
-    .pill{
-      padding: 8px 10px;
-    }
+    .pill{ padding: 8px 10px; }
 
     /* ガチャも中央で少し大きめを維持 */
     #s-gacha .orc{
@@ -250,7 +321,7 @@
 
   /* どうしても縦が足りない端末だけスクロール許可（保険） */
   @media (max-width: 600px) and (max-height: 720px) {
-    #s-q, #s-prize, #s-stamp, #s-qr {
+    #s-q, #s-prize, #s-stamp, #s-qr, #s-ans {
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
     }
@@ -366,49 +437,29 @@
 
   // ====== 演出プリセット（ケレン味） ======
   const FX_PRESET_KEY = "sticky"; // "snappy" | "standard" | "sticky"
-
   const FX_PRESETS = {
     snappy: {
       LOCK: { START_MS:200, STAMP_NEXT_MS:160, QR_TAP_MS:160, END_TAP_MS:200, ANSWER_PICK_MS:160, NEXT_BTN_MS:160 },
       HOLD: { CORRECT_MS:520, WRONG_MS:780 },
-      GACHA: {
-        BASE_MS:650,
-        RANDOM_JITTER_MS:160,
-        PAUSE_RATIO:0.50,
-        PAUSE_MIN_MS:180,
-        PAUSE_MS:520
-      },
+      GACHA: { BASE_MS:650, RANDOM_JITTER_MS:160, PAUSE_RATIO:0.50, PAUSE_MIN_MS:180, PAUSE_MS:520 },
       RATE: { BIG:0.5, NEAR_MISS:0.55 }, // ※テスト用でBIGを0.5
       BGM: { VOLUME:0.25 },
     },
     standard: {
       LOCK: { START_MS:250, STAMP_NEXT_MS:200, QR_TAP_MS:200, END_TAP_MS:250, ANSWER_PICK_MS:200, NEXT_BTN_MS:200 },
       HOLD: { CORRECT_MS:750, WRONG_MS:1000 },
-      GACHA: {
-        BASE_MS:900,
-        RANDOM_JITTER_MS:250,
-        PAUSE_RATIO:0.55,
-        PAUSE_MIN_MS:200,
-        PAUSE_MS:900
-      },
+      GACHA: { BASE_MS:900, RANDOM_JITTER_MS:250, PAUSE_RATIO:0.55, PAUSE_MIN_MS:200, PAUSE_MS:900 },
       RATE: { BIG:0.5, NEAR_MISS:0.75 }, // ※テスト用でBIGを0.5
       BGM: { VOLUME:0.25 },
     },
     sticky: {
       LOCK: { START_MS:260, STAMP_NEXT_MS:210, QR_TAP_MS:210, END_TAP_MS:260, ANSWER_PICK_MS:210, NEXT_BTN_MS:210 },
-      HOLD: { CORRECT_MS:980, WRONG_MS:1200 },
-      GACHA: {
-        BASE_MS:1200,
-        RANDOM_JITTER_MS:420,
-        PAUSE_RATIO:0.70,
-        PAUSE_MIN_MS:240,
-        PAUSE_MS:1100
-      },
+      HOLD: { CORRECT_MS:1280, WRONG_MS:1400 }, // 正解 → ガチャまでを少し長く
+      GACHA: { BASE_MS:1200, RANDOM_JITTER_MS:420, PAUSE_RATIO:0.70, PAUSE_MIN_MS:240, PAUSE_MS:3000 }, // ぽこぽこ長め
       RATE: { BIG:0.5, NEAR_MISS:0.88 }, // ※テスト用でBIGを0.5
       BGM: { VOLUME:0.25 },
     },
   };
-
   const FX = FX_PRESETS[FX_PRESET_KEY] || FX_PRESETS.standard;
 
   // ====== ガチャ画像：ポン！（共通1パターン） ======
@@ -416,7 +467,7 @@
     ENABLE: true,
     SCALE: 1.2,
     DURATION_MS: 180,
-    DELAY_MS: 500,
+    DELAY_MS: 700, // ガチャ画像のポンのタイミング
     EASING: "cubic-bezier(.2,.9,.2,1)",
     ORIGIN: "50% 50%",
   };
@@ -817,11 +868,10 @@
       // ★共通：ガチャ画像を一瞬ポン！
       setTimeout(() => playGachaPop(), GACHA_POP.DELAY_MS);
 
-      // 結果を先に決める（※演出は今回は付けない）
+      // 結果を先に決める
       const big = (Math.random() < FX.RATE.BIG);
-      const nearMiss = (!big && Math.random() < FX.RATE.NEAR_MISS);
 
-      // ★ガチャ時間は共通（nearMissで伸ばさない）
+      // ★ガチャ時間は共通
       const totalWait =
         FX.GACHA.BASE_MS +
         Math.floor(Math.random() * FX.GACHA.RANDOM_JITTER_MS);
@@ -853,7 +903,6 @@
         } else {
           prizeTitle.textContent = "ざんねん！";
           prizeImg.src = "bonus.png";
-          // いったん nearMiss / 通常はずれ どちらも「ドンマイカード」寄せにする
           prizeMsg.textContent = "ドンマイカードをゲット！";
         }
 
@@ -882,9 +931,6 @@
 
   // 初期表示
   show(sStart);
-
-  // ====== util ======
-  function gid(id){ return document.getElementById(id); }
 })();
 </script>
 </body>
